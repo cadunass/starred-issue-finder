@@ -4,6 +4,15 @@ A modern, TypeScript-powered command-line tool to quickly find all open issues f
 
 This project helps developers discover contribution opportunities by scanning their starred repositories for issues, making it easy to find new ways to contribute to open-source projects you care about.
 
+## 💡 **Why This Tool?**
+
+When you star a repository on GitHub, you're showing interest in that project. But finding good entry points to contribute can be challenging. This tool solves that by:
+
+- 🎯 **Focusing on projects you already like** - Only searches your starred repositories
+- 🚀 **Finding beginner-friendly issues** - Defaults to "good first issue" labels
+- ⚡ **Saving time** - No more manually browsing through dozens of repositories
+- 🔍 **Discovering opportunities** - Uncover contribution chances you might have missed
+
 [![npm version](https://badge.fury.io/js/starred-issue-finder.svg)](https://badge.fury.io/js/starred-issue-finder)
 [![Node.js CI](https://github.com/cadunass/starred-issue-finder/actions/workflows/ci.yml/badge.svg)](https://github.com/cadunass/starred-issue-finder/actions/workflows/ci.yml)
 
@@ -17,6 +26,17 @@ This project helps developers discover contribution opportunities by scanning th
 - **⚡ Modern CLI**: Built with TypeScript and Commander.js for a great developer experience
 - **🚀 Fast & Efficient**: Optimized API usage with higher GitHub API rate limits
 - **🛡️ Type-Safe**: Fully written in TypeScript with comprehensive type definitions
+
+## 🎯 **The Philosophy**
+
+The best contributions come from genuine interest. By focusing exclusively on your **starred repositories**, this tool helps you:
+
+1. **Contribute to projects you care about** - You've already starred them for a reason!
+2. **Start with beginner-friendly issues** - "good first issue" labels are perfect entry points
+3. **Build meaningful connections** - Contributing to projects you follow creates lasting engagement
+4. **Grow your skills** - Learn from codebases you find interesting
+
+Instead of randomly searching for any open issue, find opportunities in projects that align with your interests and goals.
 
 ---
 
@@ -84,6 +104,14 @@ $env:GITHUB_TOKEN="your_personal_access_token"
 ```bash
 find-issues
 ```
+
+**What happens by default:**
+- 🔍 Scans **all** your starred GitHub repositories
+- 🏷️ Looks for issues with the **"good first issue"** label
+- 📊 Shows results in a clean, readable format
+- ⚡ Focuses on **beginner-friendly** contribution opportunities
+
+Perfect for developers looking to start contributing to projects they've already shown interest in!
 
 ---
 
