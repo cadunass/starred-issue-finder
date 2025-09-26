@@ -1,0 +1,26 @@
+{
+    "name": "dev",
+    "dockerComposeFile": "docker-compose.yml",
+    "service": "app",
+    "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+    "postCreateCommand": "git config --global --add safe.directory /workspaces/${localWorkspaceFolderBasename}",
+    "forwardPorts": [3000],
+    "customizations": {
+        "vscode": {
+            "settings": {
+                "lldb.executable": "/usr/bin/lldb",
+            },
+
+            "extensions": [
+                "vadimcn.vscode-lldb",
+                "biomejs.biome",
+                "mutantdino.resourcemonitor",
+                "bradlc.vscode-tailwindcss",
+                "statelyai.stately-vscode",
+                "ms-azuretools.vscode-docker",
+                "github.vscode-github-actions",
+                "eamodio.gitlens"
+            ]
+        }
+    }
+}
