@@ -1,5 +1,7 @@
 # Changelog
 
+## [1.1.2](https://github.com/cadunass/starred-issue-finder/compare/v1.1.1...v1.1.2) (2025-09-26)
+
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
