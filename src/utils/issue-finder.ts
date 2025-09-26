@@ -1,5 +1,5 @@
 import { Octokit } from '@octokit/rest';
-import type { GitHubRepo, FoundIssue, SearchOptions } from '../types/github';
+import type { FoundIssue, GitHubRepo, SearchOptions } from '../types/github';
 
 export class IssueFinder {
   private octokit: Octokit;
@@ -13,7 +13,7 @@ export class IssueFinder {
 
   async getStarredRepositories(): Promise<GitHubRepo[]> {
     console.log('Fetching starred repositories...\n');
-    
+
     const starredRepos: GitHubRepo[] = [];
     let page = 1;
     let response: any;
@@ -27,7 +27,9 @@ export class IssueFinder {
         starredRepos.push(...response.data);
         page++;
       } catch (error) {
-        throw new Error(`Failed to fetch starred repositories: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        throw new Error(
+          `Failed to fetch starred repositories: ${error instanceof Error ? error.message : 'Unknown error'}`
+        );
       }
     } while (response.data.length === 100);
 
@@ -35,11 +37,11 @@ export class IssueFinder {
   }
 
   async findIssuesInRepository(
-    repo: GitHubRepo, 
+    repo: GitHubRepo,
     options: SearchOptions = {}
   ): Promise<FoundIssue[]> {
     const { labels = ['good first issue'], language } = options;
-    
+
     // Skip if language filter is specified and doesn't match
     if (language && repo.language?.toLowerCase() !== language.toLowerCase()) {
       return [];
@@ -65,7 +67,9 @@ export class IssueFinder {
         created_at: issue.created_at,
       }));
     } catch (error) {
-      console.warn(`Warning: Could not fetch issues for ${repo.full_name}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.warn(
+        `Warning: Could not fetch issues for ${repo.full_name}: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
       return [];
     }
   }
@@ -78,21 +82,23 @@ export class IssueFinder {
       for (const repo of starredRepos) {
         const repoIssues = await this.findIssuesInRepository(repo, options);
         foundIssues.push(...repoIssues);
-        
+
         // Add small delay to avoid rate limiting
         await new Promise(resolve => setTimeout(resolve, 100));
       }
 
       // Filter by creation date if specified
       if (options.createdAfter) {
-        return foundIssues.filter(issue => 
-          new Date(issue.created_at) >= (options.createdAfter as Date)
+        return foundIssues.filter(
+          issue => new Date(issue.created_at) >= (options.createdAfter as Date)
         );
       }
 
       return foundIssues;
     } catch (error) {
-      throw new Error(`Failed to find issues: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to find issues: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 }
