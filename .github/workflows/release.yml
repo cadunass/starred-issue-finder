@@ -12,6 +12,10 @@ on:
 jobs:
   release:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
     
     steps:
     - name: Checkout code
@@ -19,6 +23,7 @@ jobs:
       with:
         fetch-depth: 0
         token: ${{ secrets.GITHUB_TOKEN }}
+        persist-credentials: true
         
     - name: Setup pnpm
       uses: pnpm/action-setup@v4
