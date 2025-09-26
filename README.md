@@ -170,7 +170,7 @@ ISSUES FOUND IN YOUR STARRED REPOSITORIES
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org/) >= 18.0.0
+- [Node.js](https://nodejs.org/) >= 20.0.0
 - [pnpm](https://pnpm.io/) (recommended) or npm
 
 ### Setup

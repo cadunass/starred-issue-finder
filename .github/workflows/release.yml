@@ -22,8 +22,6 @@ jobs:
         
     - name: Setup pnpm
       uses: pnpm/action-setup@v4
-      with:
-        version: 10
         
     - name: Use Node.js
       uses: actions/setup-node@v4
@@ -40,8 +38,7 @@ jobs:
       
     - name: Run quality checks
       run: |
-        pnpm run lint
-        pnpm run format --check
+        pnpm run check
         
     - name: Configure Git
       run: |
