@@ -54,13 +54,60 @@ jobs:
       run: |
         echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc
         
-    - name: Release
+    - name: Create release branch
+      run: |
+        BRANCH_NAME="release/automated-$(date +%s)"
+        git checkout -b $BRANCH_NAME
+        echo "RELEASE_BRANCH=$BRANCH_NAME" >> $GITHUB_ENV
+        
+    - name: Run release process
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       run: |
+        # Run release but skip git push to main (we'll do it via PR)
         if [ "${{ github.event.inputs.release-type }}" != "" ]; then
-          pnpm run release ${{ github.event.inputs.release-type }} --ci
+          pnpm run release ${{ github.event.inputs.release-type }} --ci --git.push=false --github.release=false
         else
-          pnpm run release --ci
+          pnpm run release --ci --git.push=false --github.release=false
         fi
+        
+    - name: Push release branch and create PR
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        # Push the release branch
+        git push origin ${{ env.RELEASE_BRANCH }}
+        
+        # Get the new version
+        VERSION=$(node -p "require('./package.json').version")
+        
+        # Create PR
+        gh pr create \
+          --title "🚀 Release v$VERSION" \
+          --body "**Automated release for v$VERSION**
+          
+        📦 **Package published:** https://www.npmjs.com/package/starred-issue-finder/v/$VERSION
+        
+        This PR contains:
+        - Version bump to $VERSION
+        - Updated CHANGELOG.md
+        - Git tag v$VERSION
+        
+        The package has already been published to npm. This PR just syncs the version changes back to main." \
+          --base main \
+          --head ${{ env.RELEASE_BRANCH }}
+        
+        # Auto-merge the PR
+        PR_NUMBER=$(gh pr list --head ${{ env.RELEASE_BRANCH }} --json number --jq '.[0].number')
+        gh pr merge $PR_NUMBER --auto --squash --delete-branch
+        
+    - name: Create GitHub Release
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        VERSION=$(node -p "require('./package.json').version")
+        gh release create "v$VERSION" \
+          --title "v$VERSION" \
+          --notes "Release v$VERSION - see CHANGELOG.md for details" \
+          --latest
