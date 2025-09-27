@@ -16,6 +16,9 @@ jobs:
       contents: write
       issues: write
       pull-requests: write
+      actions: read
+      checks: read
+      repository-projects: read
     
     steps:
     - name: Checkout code
@@ -80,7 +83,7 @@ jobs:
         
     - name: Push changes and create PR
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}
       run: |
         # Push the release branch with tags
         git push origin ${{ env.RELEASE_BRANCH }} --tags
@@ -102,7 +105,7 @@ jobs:
         
     - name: Wait and merge PR
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}
       run: |
         # Get PR number
         PR_NUMBER=$(gh pr list --head ${{ env.RELEASE_BRANCH }} --json number --jq '.[0].number')
@@ -116,7 +119,7 @@ jobs:
         
     - name: Create GitHub Release
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}
       run: |
         # Wait for merge to complete
         sleep 5
