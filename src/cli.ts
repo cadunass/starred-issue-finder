@@ -49,7 +49,7 @@ function displayIssues(issues: FoundIssue[], format: 'table' | 'json' | 'plain' 
 
 async function main(): Promise<void> {
   program
-    .name('find-issues')
+    .name('starred-issue-finder')
     .description('Find open issues in your starred GitHub repositories')
     .version('1.0.0')
     .option(

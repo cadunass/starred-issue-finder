@@ -102,7 +102,7 @@ $env:GITHUB_TOKEN="your_personal_access_token"
 ### 3. Run the Tool
 
 ```bash
-find-issues
+starred-issue-finder
 ```
 
 **What happens by default:**
@@ -121,38 +121,38 @@ Perfect for developers looking to start contributing to projects they've already
 
 ```bash
 # Find all "good first issue" labeled issues
-find-issues
+starred-issue-finder
 
 # Show help
-find-issues --help
+starred-issue-finder --help
 
 # Show version
-find-issues --version
+starred-issue-finder --version
 ```
 
 ### Advanced Usage
 
 ```bash
 # Search for specific labels
-find-issues --labels "bug,enhancement,help wanted"
+starred-issue-finder --labels "bug,enhancement,help wanted"
 
 # Filter by programming language
-find-issues --language javascript
+starred-issue-finder --language javascript
 
 # Show only recent issues (last 30 days)
-find-issues --days 30
+starred-issue-finder --days 30
 
 # Output as JSON
-find-issues --format json
+starred-issue-finder --format json
 
 # Output as table
-find-issues --format table
+starred-issue-finder --format table
 
 # Use specific token (overrides GITHUB_TOKEN env var)
-find-issues --token your_token_here
+starred-issue-finder --token your_token_here
 
 # Combine multiple filters
-find-issues --language python --labels "good first issue,beginner" --days 7 --format table
+starred-issue-finder --language python --labels "good first issue,beginner" --days 7 --format table
 ```
 
 ### Output Formats
