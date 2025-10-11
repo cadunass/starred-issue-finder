@@ -82,12 +82,19 @@ jobs:
         cat issues.json
         
     - name: Generate Job Summary
+      shell: bash
       run: |
+        set -euo pipefail  # Exit on error, undefined vars, pipe failures
+        
+        echo "=== Generating Job Summary ==="
+        
         # Parse JSON and create markdown summary
-        echo "# 🌟 Daily Starred Repository Issue Scanner" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "**Scan Date:** $(date -u '+%Y-%m-%d %H:%M UTC')" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
+        {
+          echo "# 🌟 Daily Starred Repository Issue Scanner"
+          echo ""
+          echo "**Scan Date:** $(date -u '+%Y-%m-%d %H:%M UTC')"
+          echo ""
+        } >> $GITHUB_STEP_SUMMARY
         
         # Validate JSON file exists and is valid
         if [ ! -f issues.json ]; then
@@ -95,55 +102,80 @@ jobs:
           exit 1
         fi
         
+        echo "File exists, checking JSON validity..."
+        
         # Check if the file contains valid JSON
         if ! jq empty issues.json 2>/dev/null; then
-          echo "## ❌ Error: Invalid JSON output" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Output received:" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          cat issues.json >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          {
+            echo "## ❌ Error: Invalid JSON output"
+            echo ""
+            echo "Output received:"
+            echo '```'
+            cat issues.json
+            echo '```'
+          } >> $GITHUB_STEP_SUMMARY
           exit 1
         fi
         
+        echo "JSON is valid, counting issues..."
+        
         # Count total issues
         ISSUE_COUNT=$(jq 'length' issues.json)
+        echo "Issue count: $ISSUE_COUNT"
         
-        if [ "$ISSUE_COUNT" -eq 0 ]; then
-          echo "## 🎉 No new issues found!" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "All caught up! Check back tomorrow for new opportunities." >> $GITHUB_STEP_SUMMARY
+        if [ "$ISSUE_COUNT" = "0" ]; then
+          echo "No issues found, generating empty result message..."
+          {
+            echo "## 🎉 No new issues found!"
+            echo ""
+            echo "All caught up! Check back tomorrow for new opportunities."
+          } >> $GITHUB_STEP_SUMMARY
         else
-          echo "## 📊 Found $ISSUE_COUNT issue(s)" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Found $ISSUE_COUNT issues, generating summary..."
+          {
+            echo "## 📊 Found $ISSUE_COUNT issue(s)"
+            echo ""
+          } >> $GITHUB_STEP_SUMMARY
           
-          # Group issues by repository
-          REPOS=$(jq -r '.[].repo_name' issues.json | sort -u)
+          # Get unique repository names
+          echo "Extracting repository names..."
+          REPOS_JSON=$(jq -r '.[].repo_name' issues.json | sort -u)
           
+          # Process each repository
           while IFS= read -r repo; do
             if [ -n "$repo" ]; then
-              echo "### 📦 $repo" >> $GITHUB_STEP_SUMMARY
-              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "Processing repository: $repo"
+              {
+                echo "### 📦 $repo"
+                echo ""
+              } >> $GITHUB_STEP_SUMMARY
               
-              # Get issues for this repo
-              jq -r --arg repo "$repo" '.[] | select(.repo_name == $repo) | 
-                "- **[\(.issue_title)](\(.issue_url))** #\(.issue_number)\n  - Labels: \(.labels | join(", "))\n  - Created: \(.created_at)"' \
+              # Get issues for this repo and format them
+              jq -r --arg repo "$repo" \
+                '.[] | select(.repo_name == $repo) | 
+                "- **[\(.issue_title)](\(.issue_url))** #\(.issue_number)",
+                "  - Labels: \(.labels | join(", "))",
+                "  - Created: \(.created_at)",
+                ""' \
                 issues.json >> $GITHUB_STEP_SUMMARY
-              
-              echo "" >> $GITHUB_STEP_SUMMARY
             fi
-          done <<< "$REPOS"
+          done <<< "$REPOS_JSON"
           
-          echo "---" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "💡 **Tip:** Click on any issue title to view it on GitHub and start contributing!" >> $GITHUB_STEP_SUMMARY
+          {
+            echo "---"
+            echo ""
+            echo "💡 **Tip:** Click on any issue title to view it on GitHub and start contributing!"
+          } >> $GITHUB_STEP_SUMMARY
         fi
         
         # Add filter information if manual run
-        if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "---" >> $GITHUB_STEP_SUMMARY
-          echo "### 🔧 Filters Applied" >> $GITHUB_STEP_SUMMARY
+        if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          {
+            echo ""
+            echo "---"
+            echo "### 🔧 Filters Applied"
+            echo "- **Days:** ${{ github.event.inputs.days || '1' }}"
+          } >> $GITHUB_STEP_SUMMARY
           
           if [ -n "${{ github.event.inputs.labels }}" ]; then
             echo "- **Labels:** ${{ github.event.inputs.labels }}" >> $GITHUB_STEP_SUMMARY
@@ -152,11 +184,9 @@ jobs:
           if [ -n "${{ github.event.inputs.language }}" ]; then
             echo "- **Language:** ${{ github.event.inputs.language }}" >> $GITHUB_STEP_SUMMARY
           fi
-          
-          if [ -n "${{ github.event.inputs.days }}" ]; then
-            echo "- **Days:** ${{ github.event.inputs.days }}" >> $GITHUB_STEP_SUMMARY
-          fi
         fi
+        
+        echo "=== Job Summary Generated Successfully ==="
         
     - name: Upload issues as artifact
       if: always()
