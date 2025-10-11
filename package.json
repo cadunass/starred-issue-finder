@@ -1,6 +1,6 @@
 {
   "name": "starred-issue-finder",
-  "version": "1.1.8",
+  "version": "1.1.9",
   "description": "A command-line tool to quickly find all open issues from your starred GitHub repositories",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
