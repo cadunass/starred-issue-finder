@@ -49,4 +49,5 @@ export interface SearchOptions {
   language?: string;
   createdAfter?: Date;
   outputFormat?: 'table' | 'json' | 'plain';
+  silent?: boolean;
 }

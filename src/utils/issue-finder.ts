@@ -3,16 +3,20 @@ import type { FoundIssue, GitHubRepo, SearchOptions } from '../types/github';
 
 export class IssueFinder {
   private octokit: Octokit;
+  private silent: boolean;
 
-  constructor(token: string) {
+  constructor(token: string, silent = false) {
     if (!token) {
       throw new Error('GitHub token is required');
     }
     this.octokit = new Octokit({ auth: token });
+    this.silent = silent;
   }
 
   async getStarredRepositories(): Promise<GitHubRepo[]> {
-    console.log('Fetching starred repositories...\n');
+    if (!this.silent) {
+      console.log('Fetching starred repositories...\n');
+    }
 
     const starredRepos: GitHubRepo[] = [];
     let page = 1;
@@ -47,7 +51,9 @@ export class IssueFinder {
       return [];
     }
 
-    console.log(`Searching ${repo.full_name}...`);
+    if (!this.silent) {
+      console.log(`Searching ${repo.full_name}...`);
+    }
 
     try {
       const issuesResponse = await this.octokit.rest.issues.listForRepo({
@@ -67,9 +73,11 @@ export class IssueFinder {
         created_at: issue.created_at,
       }));
     } catch (error) {
-      console.warn(
-        `Warning: Could not fetch issues for ${repo.full_name}: ${error instanceof Error ? error.message : 'Unknown error'}`
-      );
+      if (!this.silent) {
+        console.warn(
+          `Warning: Could not fetch issues for ${repo.full_name}: ${error instanceof Error ? error.message : 'Unknown error'}`
+        );
+      }
       return [];
     }
   }

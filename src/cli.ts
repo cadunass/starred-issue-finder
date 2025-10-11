@@ -5,7 +5,8 @@ import { config } from 'dotenv';
 import type { FoundIssue, SearchOptions } from './types/github';
 import { IssueFinder } from './utils/issue-finder';
 
-config();
+// Load .env file silently
+config({ debug: false });
 
 const program = new Command();
 
@@ -94,6 +95,7 @@ async function main(): Promise<void> {
 
         // Only show progress messages for non-JSON formats
         const isJsonFormat = searchOptions.outputFormat === 'json';
+        searchOptions.silent = isJsonFormat;
 
         if (!isJsonFormat) {
           console.log('🔍 Starting search...');
@@ -109,7 +111,7 @@ async function main(): Promise<void> {
           console.log('');
         }
 
-        const finder = new IssueFinder(token);
+        const finder = new IssueFinder(token, isJsonFormat);
         const issues = await finder.findAllIssues(searchOptions);
 
         displayIssues(issues, searchOptions.outputFormat);
