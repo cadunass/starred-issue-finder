@@ -53,7 +53,7 @@ async function main(): Promise<void> {
   program
     .name('starred-issue-finder')
     .description('Find open issues in your starred GitHub repositories')
-    .version('1.0.0')
+    .version(require('../package.json').version)
     .option(
       '-l, --labels <labels>',
       'Comma-separated list of labels to search for',
