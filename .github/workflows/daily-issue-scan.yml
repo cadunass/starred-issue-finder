@@ -1,0 +1,143 @@
+name: Daily Issue Scanner
+
+on:
+  schedule:
+    # Runs every day at 9 AM UTC
+    - cron: '0 9 * * *'
+  workflow_dispatch:
+    inputs:
+      labels:
+        description: 'Comma-separated labels to filter (leave empty for "good first issue")'
+        required: false
+        default: ''
+        type: string
+      language:
+        description: 'Filter by programming language (optional)'
+        required: false
+        default: ''
+        type: string
+      days:
+        description: 'Only show issues from last N days (default: 1 for daily runs)'
+        required: false
+        default: '1'
+        type: string
+
+jobs:
+  scan-issues:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    
+    steps:
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v4
+        
+    - name: Use Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'pnpm'
+        
+    - name: Install starred-issue-finder
+      run: pnpm add -g starred-issue-finder
+      
+    - name: Scan for issues
+      id: scan
+      env:
+        GITHUB_TOKEN: ${{ secrets.STARRED_REPOS_TOKEN }}
+      run: |
+        # Build the command with optional parameters
+        # Default to --days 1 for daily runs (show issues from last 24 hours)
+        DAYS="${{ github.event.inputs.days }}"
+        if [ -z "$DAYS" ]; then
+          DAYS="1"
+        fi
+        
+        CMD="starred-issue-finder --format json --days $DAYS"
+        
+        if [ -n "${{ github.event.inputs.labels }}" ]; then
+          CMD="$CMD --labels \"${{ github.event.inputs.labels }}\""
+        fi
+        
+        if [ -n "${{ github.event.inputs.language }}" ]; then
+          CMD="$CMD --language \"${{ github.event.inputs.language }}\""
+        fi
+        
+        echo "Running: $CMD"
+        
+        # Run the command and save output
+        eval $CMD > issues.json || {
+          echo "::error::Failed to fetch issues. Check if STARRED_REPOS_TOKEN is set correctly."
+          exit 1
+        }
+        
+        # Save the output for next step
+        cat issues.json
+        
+    - name: Generate Job Summary
+      run: |
+        # Parse JSON and create markdown summary
+        echo "# 🌟 Daily Starred Repository Issue Scanner" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Scan Date:** $(date -u '+%Y-%m-%d %H:%M UTC')" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        # Count total issues
+        ISSUE_COUNT=$(jq 'length' issues.json)
+        
+        if [ "$ISSUE_COUNT" -eq 0 ]; then
+          echo "## 🎉 No new issues found!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "All caught up! Check back tomorrow for new opportunities." >> $GITHUB_STEP_SUMMARY
+        else
+          echo "## 📊 Found $ISSUE_COUNT issue(s)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Group issues by repository
+          REPOS=$(jq -r '.[].repo_name' issues.json | sort -u)
+          
+          while IFS= read -r repo; do
+            if [ -n "$repo" ]; then
+              echo "### 📦 $repo" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              
+              # Get issues for this repo
+              jq -r --arg repo "$repo" '.[] | select(.repo_name == $repo) | 
+                "- **[\(.issue_title)](\(.issue_url))** #\(.issue_number)\n  - Labels: \(.labels | join(", "))\n  - Created: \(.created_at)"' \
+                issues.json >> $GITHUB_STEP_SUMMARY
+              
+              echo "" >> $GITHUB_STEP_SUMMARY
+            fi
+          done <<< "$REPOS"
+          
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "💡 **Tip:** Click on any issue title to view it on GitHub and start contributing!" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        # Add filter information if manual run
+        if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "### 🔧 Filters Applied" >> $GITHUB_STEP_SUMMARY
+          
+          if [ -n "${{ github.event.inputs.labels }}" ]; then
+            echo "- **Labels:** ${{ github.event.inputs.labels }}" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [ -n "${{ github.event.inputs.language }}" ]; then
+            echo "- **Language:** ${{ github.event.inputs.language }}" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [ -n "${{ github.event.inputs.days }}" ]; then
+            echo "- **Days:** ${{ github.event.inputs.days }}" >> $GITHUB_STEP_SUMMARY
+          fi
+        fi
+        
+    - name: Upload issues as artifact
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: issues-${{ github.run_number }}
+        path: issues.json
+        retention-days: 30
