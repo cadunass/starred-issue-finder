@@ -1,12 +1,18 @@
 #!/usr/bin/env node
 
 import { Command } from 'commander';
-import { config } from 'dotenv';
 import type { FoundIssue, SearchOptions } from './types/github';
 import { IssueFinder } from './utils/issue-finder';
 
-// Load .env file silently
-config({ debug: false });
+// Only load .env file if GITHUB_TOKEN is not already set (to avoid dotenv output pollution)
+if (!process.env.GITHUB_TOKEN) {
+  try {
+    // Use dynamic import to avoid dotenv output when not needed
+    require('dotenv').config({ debug: false });
+  } catch {
+    // Silently fail if dotenv is not available or .env doesn't exist
+  }
+}
 
 const program = new Command();
 
