@@ -10,16 +10,18 @@ config();
 const program = new Command();
 
 function displayIssues(issues: FoundIssue[], format: 'table' | 'json' | 'plain' = 'plain'): void {
+  if (format === 'json') {
+    // Always output valid JSON, even for empty arrays
+    console.log(JSON.stringify(issues, null, 2));
+    return;
+  }
+
   if (issues.length === 0) {
     console.log('No issues found matching your criteria.');
     return;
   }
 
   switch (format) {
-    case 'json':
-      console.log(JSON.stringify(issues, null, 2));
-      break;
-
     case 'table':
       console.table(
         issues.map(issue => ({
@@ -90,24 +92,32 @@ async function main(): Promise<void> {
           searchOptions.createdAfter = daysAgo;
         }
 
-        console.log('🔍 Starting search...');
-        if (searchOptions.labels) {
-          console.log(`📋 Looking for labels: ${searchOptions.labels.join(', ')}`);
+        // Only show progress messages for non-JSON formats
+        const isJsonFormat = searchOptions.outputFormat === 'json';
+
+        if (!isJsonFormat) {
+          console.log('🔍 Starting search...');
+          if (searchOptions.labels) {
+            console.log(`📋 Looking for labels: ${searchOptions.labels.join(', ')}`);
+          }
+          if (searchOptions.language) {
+            console.log(`💻 Language filter: ${searchOptions.language}`);
+          }
+          if (searchOptions.createdAfter) {
+            console.log(`📅 Created after: ${searchOptions.createdAfter.toDateString()}`);
+          }
+          console.log('');
         }
-        if (searchOptions.language) {
-          console.log(`💻 Language filter: ${searchOptions.language}`);
-        }
-        if (searchOptions.createdAfter) {
-          console.log(`📅 Created after: ${searchOptions.createdAfter.toDateString()}`);
-        }
-        console.log('');
 
         const finder = new IssueFinder(token);
         const issues = await finder.findAllIssues(searchOptions);
 
         displayIssues(issues, searchOptions.outputFormat);
 
-        console.log(`\n✅ Found ${issues.length} issue(s) total.`);
+        // Only show summary for non-JSON formats
+        if (!isJsonFormat) {
+          console.log(`\n✅ Found ${issues.length} issue(s) total.`);
+        }
       } catch (error) {
         console.error(
           '❌ An error occurred:',

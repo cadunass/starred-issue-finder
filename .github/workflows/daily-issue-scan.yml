@@ -41,9 +41,13 @@ jobs:
         node-version: '20'
         cache: 'pnpm'
         
-    - name: Install starred-issue-finder
-      run: pnpm add -g starred-issue-finder
+    - name: Install dependencies
+      run: pnpm install --frozen-lockfile
       
+    - name: Build project
+      run: pnpm run build
+      
+    # Note: Using local build for testing. Switch to "pnpm add -g starred-issue-finder" 
     - name: Scan for issues
       id: scan
       env:
@@ -56,7 +60,7 @@ jobs:
           DAYS="1"
         fi
         
-        CMD="starred-issue-finder --format json --days $DAYS"
+        CMD="node dist/cli.js --format json --days $DAYS"
         
         if [ -n "${{ github.event.inputs.labels }}" ]; then
           CMD="$CMD --labels \"${{ github.event.inputs.labels }}\""
@@ -84,6 +88,23 @@ jobs:
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "**Scan Date:** $(date -u '+%Y-%m-%d %H:%M UTC')" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
+        
+        # Validate JSON file exists and is valid
+        if [ ! -f issues.json ]; then
+          echo "## ❌ Error: issues.json file not found" >> $GITHUB_STEP_SUMMARY
+          exit 1
+        fi
+        
+        # Check if the file contains valid JSON
+        if ! jq empty issues.json 2>/dev/null; then
+          echo "## ❌ Error: Invalid JSON output" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Output received:" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          cat issues.json >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          exit 1
+        fi
         
         # Count total issues
         ISSUE_COUNT=$(jq 'length' issues.json)
